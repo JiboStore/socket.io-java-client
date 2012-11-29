@@ -25,7 +25,10 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
+
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocketFactory;
 
 import org.json.JSONArray;
@@ -66,8 +69,7 @@ class IOConnection implements IOCallback {
 	public static final String SOCKET_IO_1 = "/socket.io/1/";
 
 	/** The SSL socket factory for HTTPS connections */
-	private static SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory
-			.getDefault();
+	private static SSLSocketFactory sslSocketFactory = (SSLSocketFactory) HttpsURLConnection.getDefaultSSLSocketFactory();
 
 	/** All available connections. */
 	private static HashMap<String, List<IOConnection>> connections = new HashMap<String, List<IOConnection>>();
@@ -287,6 +289,14 @@ class IOConnection implements IOCallback {
 		try {
 			setState(STATE_HANDSHAKE);
 			url = new URL(IOConnection.this.url.toString() + SOCKET_IO_1);
+			
+			HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
+				@Override
+				public boolean verify(String s, SSLSession sslsession) {
+					return true;
+				}
+			});
+			
 			connection = url.openConnection();
 			if (connection instanceof HttpsURLConnection) {
 				((HttpsURLConnection) connection)
